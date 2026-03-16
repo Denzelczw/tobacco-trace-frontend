@@ -278,3 +278,69 @@
     font-weight: bold;
     border: 1px solid #c3e6cb;
   }
+  /* =========================================
+   📱 MOBILE RESPONSIVENESS UPGRADE 
+   ========================================= */
+@media screen and (max-width: 768px) {
+  /* Stack the layout vertically instead of side-by-side */
+  .dashboard-layout {
+    flex-direction: column;
+  }
+
+  /* Turn the Sidebar into a Top Navigation Menu */
+  .sidebar {
+    width: 100%;
+    padding: 15px 10px;
+    border-right: none;
+    border-bottom: 2px solid #2c3e50;
+  }
+  
+  .sidebar nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 15px;
+  }
+
+  .sidebar nav button {
+    flex: 1 1 45%; /* Makes buttons sit side-by-side in a grid */
+    margin: 0;
+    font-size: 13px;
+    padding: 10px;
+  }
+
+  /* Fix the main content area padding */
+  .content {
+    padding: 15px;
+    width: 100%;
+  }
+
+  /* Make the Forms stack nicely */
+  .form-container .row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* Fix the Tables! (Allows horizontal scrolling without breaking the screen) */
+  .ledger-view {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 10px;
+  }
+  
+  table {
+    min-width: 700px; /* Forces table to stay wide so text isn't crushed */
+  }
+
+  /* Adjust headers */
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .login-card {
+    width: 95%;
+    padding: 20px;
+  }
+}
