@@ -19,7 +19,7 @@ function App() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:3001/api/login', {
+      const response = await fetch('/api/login', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(loginCreds)
       });
       const data = await response.json();
@@ -34,7 +34,7 @@ function App() {
 
   const fetchBales = async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/bales');
+      const res = await fetch('https://tobacco-trace-backend.onrender.com/api/bales');
       setBales(await res.json());
     } catch (err) { console.error(err); }
   };
@@ -51,7 +51,7 @@ function App() {
       alert("📸 Live Photo Captured & Geo-tagged!");
   };
 
-  const captureHotspotProof = (e) => {
+  const captureHotspotProof = (e) => {https://tobacco-trace-backend.onrender.com
     e.preventDefault();
     // Simulating GPS from Karoi (Deforestation Hotspot)
     setFormData({...formData, gps: '-16.8225, 29.6925', photoHash: 'IMG-KAROI-123'});
@@ -64,7 +64,7 @@ function App() {
     if (!formData.offlineMode && !formData.gps) return alert("GPS is required!");
 
     const payload = { ...formData, farmer: user.id };
-    await fetch('http://localhost:3001/api/bale', {
+    await fetch('https://tobacco-trace-backend.onrender.com/api/bale', {
         method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
     });
     fetchBales(); 
@@ -73,7 +73,7 @@ function App() {
   };
 
   const handleAcceptBid = async (baleId) => {
-      const res = await fetch('http://localhost:3001/api/accept', {
+      const res = await fetch('https://tobacco-trace-backend.onrender.com/api/accept', {
           method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ baleId, farmerId: user.id })
       });
       const data = await res.json();
@@ -243,4 +243,4 @@ function App() {
     </div>
   );
 }
-export default App;
+export default App; 
