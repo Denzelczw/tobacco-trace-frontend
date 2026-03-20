@@ -98,6 +98,12 @@ function App() {
             <button type="submit">Enter Floor</button>
           </form>
           {loginError && <p className="error">{loginError}</p>}
+          {/* --->The Demo Hint  <--- */}
+          <div className="demo-hint">
+            <small>Farmer ID: G-12345 / National ID: 63-111111-F-12</small><br/>
+            <small>Buyer ID: BAT-001 / National ID: 99-999999-B-99</small><br/>
+            <small>Admin ID: TIMB-001 / National ID: 00-000000-A-00</small><br/>
+          </div>
         </div>
       </div>
     );
