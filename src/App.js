@@ -139,8 +139,9 @@ function App() {
       <main className="content">
         <header>
           <h2>{view.replace('_', ' ')}</h2>
-          {user.role !== 'ADMIN' ? ( <div className="wallet-badge">Wallet: <span>${user.wallet}.00</span></div> ) 
-          : ( <div className="wallet-badge" style={{color: '#c0392b', borderColor: '#c0392b'}}>System Access: <span>REGULATOR ORACLE</span></div> )}
+          {user.role === 'FARMER' && ( <div className="wallet-badge"> TOTAL ECOCASH DISBURSED: <span>${user.wallet}.00</span></div> )}
+          {user.role === 'BUYER' && ( <div className="wallet-badge"> CORPORATE ESCROW: <span>${user.wallet}.00</span></div> )}
+          {user.role === 'ADMIN' && ( <div className="wallet-badge" style={{color: '#c0392b', borderColor: '#c0392b'}}>SYSTEM ACCESS: <span>REGULATOR ORACLE</span></div> )}
         </header>
 
         {view === 'DASHBOARD' && (
