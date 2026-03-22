@@ -16,18 +16,20 @@
   /* =========================================
      2. LOGIN SCREEN (The "Emerald" Entry)
      ========================================= */
-  .login-container {
-    height: 100vh;
-    width: 100vw;
-    background: linear-gradient(rgba(39, 174, 96, 0.6), rgba(44, 62, 80, 0.8)), 
-              url('/tobacco.png'); 
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  }
+     .login-container {
+      height: 100vh;
+      width: 100vw;
+      /* Add the dot-slash here 👇 */
+      background: linear-gradient(rgba(39, 174, 96, 0.6), rgba(44, 62, 80, 0.8)), 
+                  url('./tobacco.png'); 
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
   .login-card {
     /* NEW: Glassmorphism effect - slightly transparent white with a background blur */
     background: rgba(255, 255, 255, 0.92);
