@@ -19,20 +19,27 @@
   .login-container {
     height: 100vh;
     width: 100vw;
-    background: linear-gradient(135deg, #2ecc71, #27ae60); /* Emerald Green Gradient */
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    background: linear-gradient(rgba(39, 174, 96, 0.6), rgba(44, 62, 80, 0.8)), 
+              url('/tobacco.png'); 
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   }
-  
   .login-card {
-    background: white;
+    /* NEW: Glassmorphism effect - slightly transparent white with a background blur */
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     padding: 40px;
     border-radius: 12px;
     width: 100%;
     max-width: 400px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3); /* Slightly darker shadow for contrast */
     text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.3);
   }
   
   .login-card h1 { color: #27ae60; margin-bottom: 10px; }
