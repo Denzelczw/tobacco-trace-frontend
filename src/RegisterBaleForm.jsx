@@ -38,7 +38,10 @@ export default function RegisterBaleForm({ user, authFetch, apiBase, onSuccess }
     photoHash: '',
   });
 
-  const [checkedInputs, setCheckedInputs] = useState([]); // selected checklist items
+  const [checkedInputs, setCheckedInputs] = useState([]);
+  // aliases so legacy references on lines 96, 129, 147 still resolve
+  const inputs = checkedInputs;
+  const setInputs = setCheckedInputs;
   const [gpsStatus, setGpsStatus]   = useState('idle'); // idle | loading | locked
   const [photoStatus, setPhotoStatus] = useState('idle');
   const [submitting, setSubmitting] = useState(false);
