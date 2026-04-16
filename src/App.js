@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './App.css';
 import RegisterBaleForm from './RegisterBaleForm';
-import FarmerRegistry from './FarmerRegistry';
 
 const API_BASE_URL = 'https://tobacco-trace-backend.onrender.com';
 
@@ -29,7 +28,7 @@ function App() {
         setUser(data.user);
         setLoginError('');
         fetchBales();
-        if (data.user.role === 'ADMIN') setView('FARMER_REGISTRY'); else setView('DASHBOARD');
+        if (data.user.role === 'ADMIN') setView('RISK_MONITOR'); else setView('DASHBOARD');
       } else {
         setLoginError('❌ Access Denied');
       }
@@ -74,7 +73,7 @@ function App() {
           <h1>🌿 Tobacco Trace</h1>
           <p>Secure Auction Floor Login</p>
           <form onSubmit={handleLogin}>
-            <input type="text" placeholder="ID" onChange={e => setLoginCreds({ ...loginCreds, growerId: e.target.value })} />
+            <input type="text" placeholder="Grower ID" onChange={e => setLoginCreds({ ...loginCreds, growerId: e.target.value })} />
             <input type="password" placeholder="National ID" onChange={e => setLoginCreds({ ...loginCreds, nationalId: e.target.value })} />
             <button type="submit">Enter Floor</button>
           </form>
@@ -118,7 +117,7 @@ function App() {
               <p><strong>Bale ID:</strong> {traceModal.id}</p>
               <p><strong>Farmer:</strong> {traceModal.farmerName || traceModal.farmerId}</p>
               <p><strong>Variety:</strong> {traceModal.variety} &nbsp;|&nbsp; <strong>Destination:</strong> {traceModal.destination || '—'}</p>
-              <p><strong>Batch:</strong> {traceModal.numberOfBales} bale(s) @ {traceModal.weight}kg total &nbsp;|&nbsp; <strong>Registered:</strong> {traceModal.registrationDate ? new Date(traceModal.registrationDate).toLocaleDateString() : '—'}</p>
+              <p><strong>Batch:</strong> {traceModal.numberOfBales} bale(s) @ {traceModal.weight}kg &nbsp;|&nbsp; <strong>Registered:</strong> {traceModal.registrationDate ? new Date(traceModal.registrationDate).toLocaleDateString() : '—'}</p>
               {traceModal.inputs && traceModal.inputs.length > 0 && (
                 <p><strong>Inputs Declared:</strong> {traceModal.inputs.join(', ')}</p>
               )}
@@ -137,7 +136,7 @@ function App() {
                   </div>
                 ))}
                 {(!traceModal.history || traceModal.history.length === 0) && (
-                  <p style={{ color: '#e74c3c' }}>No history found. Ensure backend is updated.</p>
+                  <p style={{ color: '#e74c3c' }}>No history found.</p>
                 )}
               </div>
             </div>
@@ -154,9 +153,9 @@ function App() {
         </div>
         <nav>
           {user.role !== 'ADMIN' && <button onClick={() => setView('DASHBOARD')} className={view === 'DASHBOARD' ? 'active' : ''}>📊 Floor Overview</button>}
-          {user.role === 'FARMER'  && <button onClick={() => setView('REGISTER')}     className={view === 'REGISTER'     ? 'active' : ''}>📝 Register Bale</button>}
-          {user.role === 'BUYER'   && <button onClick={() => setView('MARKET')}       className={view === 'MARKET'       ? 'active' : ''}>💰 Place Bids</button>}
-          {user.role === 'ADMIN'   && (
+          {user.role === 'FARMER' && <button onClick={() => setView('REGISTER')}     className={view === 'REGISTER'     ? 'active' : ''}>📝 Register Bale</button>}
+          {user.role === 'BUYER'  && <button onClick={() => setView('MARKET')}       className={view === 'MARKET'       ? 'active' : ''}>💰 Place Bids</button>}
+          {user.role === 'ADMIN'  && (
             <>
               <button onClick={() => setView('RISK_MONITOR')} className={view === 'RISK_MONITOR' ? 'active' : ''}>🚨 Risk Monitoring</button>
               <button onClick={() => setView('AUDIT')}        className={view === 'AUDIT'        ? 'active' : ''}>🔎 Audit Ledger</button>
@@ -289,11 +288,6 @@ function App() {
               </tbody>
             </table>
           </div>
-        )}
-
-        {/* ── Farmer Registry (Admin) ── */}
-        {view === 'FARMER_REGISTRY' && (
-          <FarmerRegistry apiBase={API_BASE_URL} />
         )}
 
         {/* ── Register Bale ── */}
