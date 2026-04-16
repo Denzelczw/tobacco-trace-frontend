@@ -36,15 +36,20 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
     numberOfBales: '',
     weight: '',
     estimatedValue: '',
-    woodScore: '',
     woodWeight: '',
-    curing: 'Sustainable Wood',
+    curing: 'Solar/Air-Cured',
     destination: DESTINATIONS[0],
     destinationOther: '',
     offlineMode: false,
     gps: '',
     photoHash: '',
   });
+
+  // Auto-calculated — never typed by the farmer
+  const computedWoodScore =
+    parseFloat(form.woodWeight) > 0 && parseFloat(form.weight) > 0
+      ? parseFloat(((parseFloat(form.woodWeight) / parseFloat(form.weight)) * 100).toFixed(1))
+      : null;
 
   const [checkedInputs, setCheckedInputs] = useState([]);
   const [gpsStatus,     setGpsStatus]     = useState('idle');   // idle | loading | locked
@@ -95,8 +100,7 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
     if (!form.id.trim())                                    e.id           = 'Batch ID is required.';
     if (!form.numberOfBales || parseInt(form.numberOfBales) < 1) e.numberOfBales = 'Enter number of bales.';
     if (!form.weight || parseFloat(form.weight) <= 0)      e.weight       = 'Enter total weight.';
-    if (form.woodScore === '')                              e.woodScore    = 'Wood score is required.';
-    if (!form.offlineMode && !form.gps)                    e.gps          = 'GPS lock is required.';
+    // woodScore is auto-calculated — no manual validation needed    if (!form.offlineMode && !form.gps)                    e.gps          = 'GPS lock is required.';
     if (!form.offlineMode && !form.photoHash)              e.photoHash    = 'Photo evidence is required.';
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -116,7 +120,7 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
       numberOfBales:  parseInt(form.numberOfBales),
       weight:         parseFloat(form.weight),
       estimatedValue: parseFloat(form.estimatedValue) || 0,
-      woodScore:      parseInt(form.woodScore),
+      woodScore:      computedWoodScore ?? 0,
       woodWeight:     parseFloat(form.woodWeight) || 0,
       curing:         form.curing,
       destination:    form.destination,
