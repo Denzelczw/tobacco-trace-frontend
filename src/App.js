@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import RegisterBaleForm from './RegisterBaleForm';
+import FarmerRegistry from './FarmerRegistry';
 
 const API_BASE_URL = 'https://tobacco-trace-backend.onrender.com';
 
@@ -28,7 +29,7 @@ function App() {
         setUser(data.user);
         setLoginError('');
         fetchBales();
-        if (data.user.role === 'ADMIN') setView('RISK_MONITOR'); else setView('DASHBOARD');
+        if (data.user.role === 'ADMIN') setView('FARMER_REGISTRY'); else setView('DASHBOARD');
       } else {
         setLoginError('❌ Access Denied');
       }
@@ -288,6 +289,11 @@ function App() {
               </tbody>
             </table>
           </div>
+        )}
+
+        {/* ── Farmer Registry (Admin) ── */}
+        {view === 'FARMER_REGISTRY' && (
+          <FarmerRegistry apiBase={API_BASE_URL} />
         )}
 
         {/* ── Register Bale ── */}
