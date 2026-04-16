@@ -1,7 +1,16 @@
 import React, { useState } from 'react';
 
 const VARIETIES = ['Virginia Flue-Cured', 'Burley', 'Oriental', 'Dark Fire-Cured'];
-const CURING_METHODS = ['Sustainable Wood', 'Coal', 'Solar/Air-Cured', 'Gas-Cured'];
+const CURING_METHODS = ['Solar/Air-Cured', 'Gas-Cured', 'Sustainable Wood', 'Dark Fire-Cured', 'Coal'];
+
+// Compliance metadata shown live to the farmer
+const CURING_INFO = {
+  'Solar/Air-Cured':   { badge: '🌱 Fully Sustainable', color: '#27ae60', bg: '#eafaf1', note: '+$25 green bonus added to your floor price. Best environmental rating.',          penalty: false },
+  'Gas-Cured':         { badge: '✅ Clean Method',       color: '#2980b9', bg: '#eaf4fb', note: '+$15 green bonus. Low-emission, TIMB compliant with no restrictions.',           penalty: false },
+  'Sustainable Wood':  { badge: '⚠️ Conditional',        color: '#f39c12', bg: '#fef9e7', note: '+$20 green bonus if Wood Score ≤ 15. Non-compliant if Wood Score > 30.',         penalty: false },
+  'Dark Fire-Cured':   { badge: '⚠️ Monitored',          color: '#e67e22', bg: '#fef5e7', note: '+$10 green bonus. Wood Score must stay ≤ 20 to avoid a MEDIUM risk flag.',      penalty: false },
+  'Coal':              { badge: '🚫 High Emission',       color: '#e74c3c', bg: '#fdecea', note: '−$15 penalty applied to floor price. Flagged for Environmental Officer review.', penalty: true  },
+};
 const DESTINATIONS = [
   'Tobacco Sales Floor (TSF) – Harare',
   'Boka Tobacco Auctions – Harare',
@@ -246,6 +255,19 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
                 <select style={field(false)} value={form.curing} onChange={e => set('curing', e.target.value)}>
                   {CURING_METHODS.map(c => <option key={c}>{c}</option>)}
                 </select>
+                {/* Live compliance badge */}
+                {CURING_INFO[form.curing] && (() => {
+                  const info = CURING_INFO[form.curing];
+                  return (
+                    <div style={{ marginTop: '8px', padding: '10px 12px', borderRadius: '6px',
+                      backgroundColor: info.bg, border: `1px solid ${info.color}` }}>
+                      <span style={{ fontWeight: '700', color: info.color, fontSize: '13px' }}>
+                        {info.badge}
+                      </span>
+                      <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555' }}>{info.note}</p>
+                    </div>
+                  );
+                })()}
               </div>
 
               <div>
