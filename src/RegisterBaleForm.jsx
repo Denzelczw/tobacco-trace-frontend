@@ -31,7 +31,6 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
   const today = new Date().toISOString().split('T')[0];
 
   const [form, setForm] = useState({
-    id: '',
     variety: 'Virginia Flue-Cured',
     numberOfBales: '',
     weight: '',
@@ -97,7 +96,6 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
   // ── validation ───────────────────────────────────────────────────
   const validate = () => {
     const e = {};
-    if (!form.id.trim())                                    e.id           = 'Batch ID is required.';
     if (!form.numberOfBales || parseInt(form.numberOfBales) < 1) e.numberOfBales = 'Enter number of bales.';
     if (!form.weight || parseFloat(form.weight) <= 0)      e.weight       = 'Enter total weight.';
     // woodScore is auto-calculated — no manual validation needed    if (!form.offlineMode && !form.gps)                    e.gps          = 'GPS lock is required.';
@@ -114,7 +112,6 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
     setResult(null);
 
     const payload = {
-      id:             form.id.trim(),
       farmer:         user.id,
       variety:        form.variety,
       numberOfBales:  parseInt(form.numberOfBales),
@@ -198,14 +195,6 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
           <div style={card}>
             <h3 style={head}><span>🏷️</span> Batch Identity</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
-
-              <div>
-                <label style={lbl}>Batch / Bale ID <span style={{ color: '#e74c3c' }}>*</span></label>
-                <input style={field(errors.id)} value={form.id}
-                  placeholder="e.g. TT-2025-001"
-                  onChange={e => set('id', e.target.value)} />
-                {errors.id && <p style={err}>{errors.id}</p>}
-              </div>
 
               <div>
                 <label style={lbl}>Tobacco Variety <span style={{ color: '#e74c3c' }}>*</span></label>
