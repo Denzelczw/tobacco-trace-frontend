@@ -101,12 +101,15 @@ export default function App() {
   if (!user) {
     return (
       <div className="login-container">
-        <div className="login-card">
-          <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-            <img src={tobaccoImg} alt="Tobacco Trace"
-              style={{ width: '90px', height: '90px', objectFit: 'contain', borderRadius: '16px' }} />
+        <div className="login-card" style={{ padding: 0, overflow: 'hidden' }}>
+          {/* Banner image across the top */}
+          <div style={{ width: '100%', height: '160px', overflow: 'hidden', borderRadius: '20px 20px 0 0' }}>
+            <img src={tobaccoImg} alt="Tobacco fields"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
           </div>
-          <div className="brand-logo" style={{ justifyContent: 'center' }}>
+
+          <div style={{ padding: '28px 36px 36px' }}>
+            <div className="brand-logo" style={{ justifyContent: 'center', marginBottom: '6px' }}>
             <div className="logo-icon"><Leaf size={20} /></div>
             <h1>Tobacco Trace</h1>
           </div>
@@ -124,6 +127,7 @@ export default function App() {
             <small>💰 Buyer — BAT-001 / 99-999999-B-99</small>
             <small>🛡️ Admin — TIMB-001 / 00-000000-A-00</small>
           </div>
+          </div> {/* end inner padding div */}
         </div>
       </div>
     );
