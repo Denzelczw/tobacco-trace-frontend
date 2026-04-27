@@ -184,7 +184,7 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
 
   return (
     <div style={{ maxWidth: '720px', margin: '0 auto' }}>
-      <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '28px 32px', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
+      <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '28px 32px', boxShadow: '0 4px 16px rgba(22,163,74,0.08)', border: '1.5px solid #d1fae5' }}>
 
         {/* Header */}
         <div style={{ marginBottom: '24px', borderBottom: '2px solid #f0f0f0', paddingBottom: '16px' }}>
@@ -411,9 +411,14 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
 
           {/* ── Submit ── */}
           <button type="submit" disabled={submitting}
-            style={{ width: '100%', padding: '14px', backgroundColor: submitting ? '#95a5a6' : '#2c3e50',
-              color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px',
-              fontWeight: '700', cursor: submitting ? 'not-allowed' : 'pointer', letterSpacing: '0.5px' }}>
+            style={{ width: '100%', padding: '14px',
+              background: submitting ? '#9ca3af' : 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
+              color: 'white', border: 'none', borderRadius: '10px',
+              fontSize: '15px', fontWeight: '700',
+              cursor: submitting ? 'not-allowed' : 'pointer',
+              letterSpacing: '0.3px', fontFamily: "'Poppins', sans-serif",
+              boxShadow: submitting ? 'none' : '0 4px 12px rgba(22,163,74,0.3)',
+              transition: 'all 0.2s' }}>
             {submitting ? '⏳ Registering to Blockchain...' : '🔗 Register Batch on Blockchain'}
           </button>
 
