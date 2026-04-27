@@ -2,15 +2,6 @@ import React, { useState, useEffect } from 'react';
 
 const VARIETIES = ['Virginia Flue-Cured', 'Burley', 'Oriental', 'Dark Fire-Cured'];
 const CURING_METHODS = ['Solar/Air-Cured', 'Gas-Cured', 'Sustainable Wood', 'Dark Fire-Cured', 'Coal'];
-
-// Compliance metadata shown live to the farmer
-const CURING_INFO = {
-  'Solar/Air-Cured':   { badge: '🌱 Fully Sustainable', color: '#27ae60', bg: '#eafaf1', note: '+$25 green bonus added to your floor price. Best environmental rating.',          penalty: false },
-  'Gas-Cured':         { badge: '✅ Clean Method',       color: '#2980b9', bg: '#eaf4fb', note: '+$15 green bonus. Low-emission, TIMB compliant with no restrictions.',           penalty: false },
-  'Sustainable Wood':  { badge: '⚠️ Conditional',        color: '#f39c12', bg: '#fef9e7', note: '+$20 green bonus if Wood Score ≤ 15. Non-compliant if Wood Score > 30.',         penalty: false },
-  'Dark Fire-Cured':   { badge: '⚠️ Monitored',          color: '#e67e22', bg: '#fef5e7', note: '+$10 green bonus. Wood Score must stay ≤ 20 to avoid a MEDIUM risk flag.',      penalty: false },
-  'Coal':              { badge: '🚫 High Emission',       color: '#e74c3c', bg: '#fdecea', note: '−$15 penalty applied to floor price. Flagged for Environmental Officer review.', penalty: true  },
-};
 const DESTINATIONS = [
   'Tobacco Sales Floor (TSF) – Harare',
   'Boka Tobacco Auctions – Harare',
@@ -26,6 +17,30 @@ const INPUT_CHECKLIST = [
   { category: 'Herbicides',  items: ['Metolachlor', 'Pendimethalin', 'Glyphosate (Roundup)', 'Acetochlor'] },
   { category: 'Fungicides',  items: ['Mancozeb', 'Metalaxyl', 'Chlorothalonil', 'Propiconazole'] },
 ];
+const CURING_INFO = {
+  'Solar/Air-Cured':   { badge: '🌱 Fully Sustainable', color: '#27ae60', bg: '#eafaf1', note: '+$25 green bonus added to your floor price. Best environmental rating.' },
+  'Gas-Cured':         { badge: '✅ Clean Method',       color: '#2980b9', bg: '#eaf4fb', note: '+$15 green bonus. Low-emission, TIMB compliant with no restrictions.' },
+  'Sustainable Wood':  { badge: '⚠️ Conditional',        color: '#f39c12', bg: '#fef9e7', note: '+$20 green bonus if Wood Score ≤ 15. Non-compliant if Wood Score > 30.' },
+  'Dark Fire-Cured':   { badge: '⚠️ Monitored',          color: '#e67e22', bg: '#fef5e7', note: '+$10 green bonus. Wood Score must stay ≤ 20 to avoid a MEDIUM risk flag.' },
+  'Coal':              { badge: '🚫 High Emission',       color: '#e74c3c', bg: '#fdecea', note: '−$15 penalty applied to floor price. Flagged for Environmental Officer review.' },
+};
+const RISK_EXPLANATION = {
+  LOW: {
+    icon: '✅', title: 'All Checks Passed',
+    message: 'Your bale has passed all origin, compliance, and environmental checks. It is cleared for auction with no restrictions.',
+    bg: '#eafaf1', border: '#27ae60', color: '#1e8449',
+  },
+  MEDIUM: {
+    icon: '⚠️', title: 'Review Required',
+    message: 'Your bale has been flagged for a routine review. This may be due to offline registration, a high-emission curing method, or a wood weight anomaly. A local Agritex or Environmental Officer will be assigned to verify your batch before it proceeds to auction.',
+    bg: '#fef9e7', border: '#f39c12', color: '#856404',
+  },
+  HIGH: {
+    icon: '🚫', title: 'Batch Locked — Pending Physical Inspection',
+    message: 'Your bale has been flagged as HIGH RISK and is currently locked from auction. This may be due to a geographic fraud alert, an impossible yield discrepancy, or a serious environmental violation. A TIMB Auditor or Forestry Commission officer has been dispatched for a physical inspection. You will not be able to accept bids until the inspection is complete and the lock is cleared by a TIMB officer.',
+    bg: '#fdecea', border: '#e74c3c', color: '#c0392b',
+  },
+};
 
 export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
   const today = new Date().toISOString().split('T')[0];
@@ -44,20 +59,34 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
     photoHash: '',
   });
 
-  // Auto-calculated — never typed by the farmer
+  const [checkedInputs, setCheckedInputs] = useState([]);
+  const [gpsStatus,     setGpsStatus]     = useState('loading');
+  const [photoStatus,   setPhotoStatus]   = useState('idle');
+  const [submitting,    setSubmitting]    = useState(false);
+  const [result,        setResult]        = useState(null);
+  const [errors,        setErrors]        = useState({});
+
+  // Auto-calculated wood score
   const computedWoodScore =
     parseFloat(form.woodWeight) > 0 && parseFloat(form.weight) > 0
       ? parseFloat(((parseFloat(form.woodWeight) / parseFloat(form.weight)) * 100).toFixed(1))
       : null;
 
-  const [checkedInputs, setCheckedInputs] = useState([]);
-  const [gpsStatus,     setGpsStatus]     = useState('loading'); // loading | locked | error
-  const [photoStatus,   setPhotoStatus]   = useState('idle');   // idle | captured
-  const [submitting,    setSubmitting]    = useState(false);
-  const [result,        setResult]        = useState(null);
-  const [errors,        setErrors]        = useState({});
+  // ── Auto-lock GPS on mount ───────────────────────────────────────
+  useEffect(() => {
+    if (!navigator.geolocation) { setGpsStatus('error'); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const lat = pos.coords.latitude.toFixed(4);
+        const lon = pos.coords.longitude.toFixed(4);
+        setForm(f => ({ ...f, gps: `${lat}, ${lon}` }));
+        setGpsStatus('locked');
+      },
+      () => setGpsStatus('error'),
+      { enableHighAccuracy: true }
+    );
+  }, []);
 
-  // ── helpers ──────────────────────────────────────────────────────
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const weightPerBale =
@@ -70,24 +99,6 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
       prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]
     );
 
-  // Auto-lock GPS on form mount
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      setGpsStatus('error');
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        const lat = pos.coords.latitude.toFixed(4);
-        const lon = pos.coords.longitude.toFixed(4);
-        set('gps', `${lat}, ${lon}`);
-        setGpsStatus('locked');
-      },
-      () => setGpsStatus('error'),
-      { enableHighAccuracy: true }
-    );
-  }, []);
-
   const capturePhoto = e => {
     const file = e.target.files[0];
     if (file) {
@@ -96,18 +107,18 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
     }
   };
 
-  // ── validation ───────────────────────────────────────────────────
+  // ── Validation ───────────────────────────────────────────────────
   const validate = () => {
     const e = {};
     if (!form.numberOfBales || parseInt(form.numberOfBales) < 1) e.numberOfBales = 'Enter number of bales.';
-    if (!form.weight || parseFloat(form.weight) <= 0)      e.weight       = 'Enter total weight.';
-    // woodScore is auto-calculated — no manual validation needed    if (!form.offlineMode && !form.gps)                    e.gps          = 'GPS lock is required.';
-    if (!form.offlineMode && !form.photoHash)              e.photoHash    = 'Photo evidence is required.';
+    if (!form.weight || parseFloat(form.weight) <= 0)            e.weight        = 'Enter total weight.';
+    if (!form.offlineMode && gpsStatus !== 'locked')             e.gps           = 'GPS lock is required.';
+    if (!form.offlineMode && !form.photoHash)                    e.photoHash     = 'Photo evidence is required.';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  // ── submit ───────────────────────────────────────────────────────
+  // ── Submit ───────────────────────────────────────────────────────
   const handleSubmit = async e => {
     e.preventDefault();
     if (!validate()) return;
@@ -115,24 +126,24 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
     setResult(null);
 
     const payload = {
-      farmer:         user.id,
-      variety:        form.variety,
-      numberOfBales:  parseInt(form.numberOfBales),
-      weight:         parseFloat(form.weight),
-      estimatedValue: parseFloat(form.estimatedValue) || 0,
-      woodScore:      computedWoodScore ?? 0,
-      woodWeight:     parseFloat(form.woodWeight) || 0,
-      curing:         form.curing,
-      destination:    form.destination,
+      farmer:           user.id,
+      variety:          form.variety,
+      numberOfBales:    parseInt(form.numberOfBales),
+      weight:           parseFloat(form.weight),
+      estimatedValue:   parseFloat(form.estimatedValue) || 0,
+      woodScore:        computedWoodScore ?? 0,
+      woodWeight:       parseFloat(form.woodWeight) || 0,
+      curing:           form.curing,
+      destination:      form.destination,
       destinationOther: form.destinationOther,
-      gps:            form.gps,
-      offlineMode:    form.offlineMode,
-      photoHash:      form.photoHash,
-      inputs:         checkedInputs,
+      gps:              form.gps,
+      offlineMode:      form.offlineMode,
+      photoHash:        form.photoHash,
+      inputs:           checkedInputs,
     };
 
     try {
-      const res = await fetch(`${apiBase}/api/bale`, {
+      const res  = await fetch(`${apiBase}/api/bale`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -142,15 +153,13 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
       if (res.ok) {
         setResult({ success: true, ...data });
         onSuccess();
-        // reset
         setForm({
-          id: '', variety: 'Virginia Flue-Cured', numberOfBales: '', weight: '',
-          estimatedValue: '', woodScore: '', woodWeight: '', curing: 'Sustainable Wood',
+          variety: 'Virginia Flue-Cured', numberOfBales: '', weight: '',
+          estimatedValue: '', woodWeight: '', curing: 'Solar/Air-Cured',
           destination: DESTINATIONS[0], destinationOther: '', offlineMode: false,
-          gps: '', photoHash: '',
+          gps: form.gps, photoHash: '', // keep GPS, reset the rest
         });
         setCheckedInputs([]);
-        setGpsStatus('idle');
         setPhotoStatus('idle');
       } else {
         setResult({ success: false, message: data.error || 'Registration failed.' });
@@ -162,20 +171,16 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
     }
   };
 
-  // ── style helpers ─────────────────────────────────────────────────
-  const field = err => ({
+  // ── Style helpers ────────────────────────────────────────────────
+  const field = hasErr => ({
     width: '100%', padding: '9px 12px', borderRadius: '6px', fontSize: '14px',
-    border: `1px solid ${err ? '#e74c3c' : '#ccc'}`,
+    border: `1px solid ${hasErr ? '#e74c3c' : '#ccc'}`,
     boxSizing: 'border-box', marginTop: '4px', outline: 'none',
   });
   const lbl  = { display: 'block', fontWeight: '600', fontSize: '13px', color: '#555', marginTop: '14px' };
   const err  = { color: '#e74c3c', fontSize: '12px', marginTop: '3px' };
   const card = { backgroundColor: '#f8f9fa', border: '1px solid #e0e0e0', borderRadius: '10px', padding: '18px 20px', marginBottom: '20px' };
-  const head = { margin: '0 0 14px 0', fontSize: '14px', fontWeight: '700', color: '#2c3e50',
-    textTransform: 'uppercase', letterSpacing: '0.5px',
-    borderBottom: '2px solid #3498db', paddingBottom: '8px',
-    display: 'flex', alignItems: 'center', gap: '8px' };
-  const riskColor = { HIGH: '#e74c3c', MEDIUM: '#f39c12', LOW: '#27ae60' };
+  const head = { margin: '0 0 14px 0', fontSize: '14px', fontWeight: '700', color: '#2c3e50', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '2px solid #3498db', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' };
 
   return (
     <div style={{ maxWidth: '720px', margin: '0 auto' }}>
@@ -198,14 +203,12 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
           <div style={card}>
             <h3 style={head}><span>🏷️</span> Batch Identity</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
-
               <div>
                 <label style={lbl}>Tobacco Variety <span style={{ color: '#e74c3c' }}>*</span></label>
                 <select style={field(false)} value={form.variety} onChange={e => set('variety', e.target.value)}>
                   {VARIETIES.map(v => <option key={v}>{v}</option>)}
                 </select>
               </div>
-
               <div>
                 <label style={lbl}>Number of Bales <span style={{ color: '#e74c3c' }}>*</span></label>
                 <input style={field(errors.numberOfBales)} type="number" min="1"
@@ -213,87 +216,85 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
                   onChange={e => set('numberOfBales', e.target.value)} />
                 {errors.numberOfBales && <p style={err}>{errors.numberOfBales}</p>}
               </div>
-
               <div>
                 <label style={lbl}>Total Batch Weight (kg) <span style={{ color: '#e74c3c' }}>*</span></label>
                 <input style={field(errors.weight)} type="number" min="0" step="0.1"
                   placeholder="e.g. 500" value={form.weight}
                   onChange={e => set('weight', e.target.value)} />
                 {errors.weight && <p style={err}>{errors.weight}</p>}
-                {weightPerBale && (
-                  <p style={{ fontSize: '12px', color: '#27ae60', margin: '3px 0 0' }}>≈ {weightPerBale} kg / bale</p>
-                )}
+                {weightPerBale && <p style={{ fontSize: '12px', color: '#27ae60', margin: '3px 0 0' }}>≈ {weightPerBale} kg / bale</p>}
               </div>
-
-            </div>
-
-            <div style={{ marginTop: '4px' }}>
-              <label style={lbl}>Your Estimated Total Value (USD)</label>
-              <div style={{ position: 'relative' }}>
-                <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#888', marginTop: '2px' }}>$</span>
-                <input style={{ ...field(false), paddingLeft: '26px' }} type="number" min="0" step="0.01"
-                  placeholder="Your own valuation (optional)" value={form.estimatedValue}
-                  onChange={e => set('estimatedValue', e.target.value)} />
+              <div>
+                <label style={lbl}>Your Estimated Total Value (USD)</label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#888', marginTop: '2px' }}>$</span>
+                  <input style={{ ...field(false), paddingLeft: '26px' }} type="number" min="0" step="0.01"
+                    placeholder="Optional" value={form.estimatedValue}
+                    onChange={e => set('estimatedValue', e.target.value)} />
+                </div>
+                <p style={{ fontSize: '12px', color: '#888', margin: '3px 0 0' }}>The algorithmic floor price may differ.</p>
               </div>
-              <p style={{ fontSize: '12px', color: '#888', margin: '3px 0 0' }}>
-                The <strong>algorithmic floor price</strong> is calculated by the system and may differ.
-              </p>
             </div>
           </div>
 
           {/* ── Section 2: Curing & Wood ── */}
           <div style={card}>
             <h3 style={head}><span>🌿</span> Curing & Environmental Compliance</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 20px' }}>
-
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
               <div>
                 <label style={lbl}>Curing Method <span style={{ color: '#e74c3c' }}>*</span></label>
                 <select style={field(false)} value={form.curing} onChange={e => set('curing', e.target.value)}>
                   {CURING_METHODS.map(c => <option key={c}>{c}</option>)}
                 </select>
-                {/* Live compliance badge */}
                 {CURING_INFO[form.curing] && (() => {
                   const info = CURING_INFO[form.curing];
                   return (
-                    <div style={{ marginTop: '8px', padding: '10px 12px', borderRadius: '6px',
-                      backgroundColor: info.bg, border: `1px solid ${info.color}` }}>
-                      <span style={{ fontWeight: '700', color: info.color, fontSize: '13px' }}>
-                        {info.badge}
-                      </span>
+                    <div style={{ marginTop: '8px', padding: '10px 12px', borderRadius: '6px', backgroundColor: info.bg, border: `1px solid ${info.color}` }}>
+                      <span style={{ fontWeight: '700', color: info.color, fontSize: '13px' }}>{info.badge}</span>
                       <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555' }}>{info.note}</p>
                     </div>
                   );
                 })()}
               </div>
-
               <div>
-                <label style={lbl}>
-                  Wood Consumption Score <span style={{ color: '#e74c3c' }}>*</span>
-                  <span title="0–15: Green Bonus eligible. >30: Non-compliant."
-                    style={{ marginLeft: '6px', cursor: 'help', color: '#3498db' }}>ℹ️</span>
-                </label>
-                <input style={field(errors.woodScore)} type="number" min="0"
-                  placeholder="0 – 100" value={form.woodScore}
-                  onChange={e => set('woodScore', e.target.value)} />
-                {errors.woodScore && <p style={err}>{errors.woodScore}</p>}
-                {form.woodScore !== '' && (
-                  <p style={{ fontSize: '12px', margin: '3px 0 0',
-                    color: parseInt(form.woodScore) <= 15 ? '#27ae60'
-                         : parseInt(form.woodScore) > 30 ? '#e74c3c' : '#f39c12' }}>
-                    {parseInt(form.woodScore) <= 15 ? '✅ +$20 Green Bonus eligible'
-                      : parseInt(form.woodScore) > 30 ? '🚫 Non-compliant threshold'
-                      : '⚠️ Above green threshold'}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label style={lbl}>Wood Weight Used (kg)</label>
+                <label style={lbl}>Estimated Wood Weight Used (kg)</label>
                 <input style={field(false)} type="number" min="0" step="0.1"
                   placeholder="e.g. 200" value={form.woodWeight}
                   onChange={e => set('woodWeight', e.target.value)} />
+                <p style={{ fontSize: '12px', color: '#888', margin: '4px 0 0' }}>Leave blank if no wood was used.</p>
               </div>
+            </div>
 
+            {/* Auto-calculated Wood Score */}
+            <div style={{ marginTop: '16px', padding: '14px 16px', borderRadius: '8px', backgroundColor: '#f0f3f4', border: '1px solid #d5d8dc' }}>
+              <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: '700', color: '#7f8c8d', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                🔢 Auto-Calculated Wood Consumption Score
+              </p>
+              {computedWoodScore !== null ? (() => {
+                const score = computedWoodScore;
+                const color = score <= 15 ? '#27ae60' : score > 30 ? '#e74c3c' : '#f39c12';
+                const label = score <= 15 ? '✅ Green Bonus Eligible' : score > 30 ? '🚫 Non-Compliant — Will Be Blocked' : '⚠️ Above Green Threshold';
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ fontSize: '36px', fontWeight: '800', color, lineHeight: 1 }}>{score}</div>
+                    <div>
+                      <div style={{ fontWeight: '700', color, fontSize: '14px' }}>{label}</div>
+                      <div style={{ fontSize: '12px', color: '#888', marginTop: '2px' }}>
+                        Formula: ({form.woodWeight}kg ÷ {form.weight}kg) × 100 = {score}
+                      </div>
+                      {score > 30 && (
+                        <div style={{ fontSize: '12px', color: '#e74c3c', marginTop: '4px', fontWeight: '600' }}>
+                          Reduce wood usage below {(parseFloat(form.weight) * 0.3).toFixed(0)}kg to become compliant.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })() : (
+                <p style={{ margin: 0, fontSize: '13px', color: '#aaa', fontStyle: 'italic' }}>
+                  Enter total batch weight and wood weight above to calculate automatically.
+                </p>
+              )}
             </div>
           </div>
 
@@ -305,8 +306,7 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
             </p>
             {INPUT_CHECKLIST.map(group => (
               <div key={group.category} style={{ marginBottom: '14px' }}>
-                <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: '700',
-                  color: '#7f8c8d', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: '700', color: '#7f8c8d', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   {group.category}
                 </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -314,16 +314,13 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
                     const checked = checkedInputs.includes(item);
                     return (
                       <label key={item} style={{
-                        display: 'flex', alignItems: 'center', gap: '6px',
-                        padding: '6px 12px', borderRadius: '20px', cursor: 'pointer',
-                        fontSize: '13px', userSelect: 'none', transition: 'all 0.15s',
+                        display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px',
+                        borderRadius: '20px', cursor: 'pointer', fontSize: '13px', userSelect: 'none',
                         backgroundColor: checked ? '#2c3e50' : '#f0f0f0',
                         color: checked ? '#fff' : '#555',
                         border: `1px solid ${checked ? '#2c3e50' : '#ddd'}`,
                       }}>
-                        <input type="checkbox" checked={checked}
-                          onChange={() => toggleInput(item)}
-                          style={{ display: 'none' }} />
+                        <input type="checkbox" checked={checked} onChange={() => toggleInput(item)} style={{ display: 'none' }} />
                         {checked ? '✓ ' : ''}{item}
                       </label>
                     );
@@ -356,20 +353,23 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
           {/* ── Section 5: Proof of Origin ── */}
           <div style={card}>
             <h3 style={head}><span>📍</span> Proof of Origin</h3>
-
             <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '14px', color: '#555' }}>
               <input type="checkbox" checked={form.offlineMode}
                 onChange={e => {
-                  set('offlineMode', e.target.checked);
-                  set('gps', ''); set('photoHash', '');
-                  setGpsStatus(e.target.checked ? 'idle' : 'loading');
-                  if (!e.target.checked) {
-                    // Re-acquire GPS when coming back online
+                  const offline = e.target.checked;
+                  set('offlineMode', offline);
+                  set('gps', '');
+                  set('photoHash', '');
+                  setPhotoStatus('idle');
+                  if (!offline) {
+                    setGpsStatus('loading');
                     navigator.geolocation.getCurrentPosition(
-                      pos => { set('gps', `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`); setGpsStatus('locked'); },
+                      pos => { setForm(f => ({ ...f, gps: `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}` })); setGpsStatus('locked'); },
                       () => setGpsStatus('error'),
                       { enableHighAccuracy: true }
                     );
+                  } else {
+                    setGpsStatus('idle');
                   }
                 }}
                 style={{ width: '16px', height: '16px' }} />
@@ -379,7 +379,7 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
             {!form.offlineMode && (
               <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
-                {/* GPS — auto-locked, read only */}
+                {/* GPS status display */}
                 <div style={{
                   padding: '11px 14px', borderRadius: '7px', fontSize: '14px', fontWeight: '600',
                   backgroundColor: gpsStatus === 'locked' ? '#eafaf1' : gpsStatus === 'error' ? '#fdecea' : '#fef9e7',
@@ -392,16 +392,15 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
                 </div>
                 {errors.gps && <p style={err}>{errors.gps}</p>}
 
+                {/* Photo capture */}
                 <div>
                   <label style={{
-                    display: 'block', width: '100%', boxSizing: 'border-box',
-                    padding: '11px', textAlign: 'center', fontWeight: '600', fontSize: '14px',
-                    backgroundColor: photoStatus === 'captured' ? '#27ae60' : '#34495e',
-                    color: 'white', borderRadius: '7px', cursor: 'pointer',
+                    display: 'block', width: '100%', boxSizing: 'border-box', padding: '11px',
+                    textAlign: 'center', fontWeight: '600', fontSize: '14px', borderRadius: '7px', cursor: 'pointer',
+                    backgroundColor: photoStatus === 'captured' ? '#27ae60' : '#34495e', color: 'white',
                   }}>
-                    {photoStatus === 'idle' ? '📸 2. Capture Live Barn Photo' : `✅ Photo Hashed: ${form.photoHash}`}
-                    <input type="file" accept="image/*" capture="environment"
-                      onChange={capturePhoto} style={{ display: 'none' }} />
+                    {photoStatus === 'idle' ? '📸 Capture Live Barn Photo' : `✅ Photo Hashed: ${form.photoHash}`}
+                    <input type="file" accept="image/*" capture="environment" onChange={capturePhoto} style={{ display: 'none' }} />
                   </label>
                   {errors.photoHash && <p style={err}>{errors.photoHash}</p>}
                 </div>
@@ -412,11 +411,9 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
 
           {/* ── Submit ── */}
           <button type="submit" disabled={submitting}
-            style={{ width: '100%', padding: '14px',
-              backgroundColor: submitting ? '#95a5a6' : '#2c3e50',
-              color: 'white', border: 'none', borderRadius: '8px',
-              fontSize: '16px', fontWeight: '700',
-              cursor: submitting ? 'not-allowed' : 'pointer', letterSpacing: '0.5px' }}>
+            style={{ width: '100%', padding: '14px', backgroundColor: submitting ? '#95a5a6' : '#2c3e50',
+              color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px',
+              fontWeight: '700', cursor: submitting ? 'not-allowed' : 'pointer', letterSpacing: '0.5px' }}>
             {submitting ? '⏳ Registering to Blockchain...' : '🔗 Register Batch on Blockchain'}
           </button>
 
@@ -424,29 +421,46 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
 
         {/* ── Result Banner ── */}
         {result && (
-          <div style={{ marginTop: '20px', padding: '16px 20px', borderRadius: '8px',
-            backgroundColor: result.success ? '#eafaf1' : '#fdecea',
-            border: `1px solid ${result.success ? '#27ae60' : '#e74c3c'}` }}>
+          <div style={{ marginTop: '20px' }}>
             {result.success ? (
-              <>
-                <p style={{ margin: '0 0 10px', fontWeight: '700', color: '#1e8449', fontSize: '15px' }}>
+              <div style={{ padding: '16px 20px', borderRadius: '8px', backgroundColor: '#eafaf1', border: '1px solid #27ae60' }}>
+                <p style={{ margin: '0 0 12px', fontWeight: '700', color: '#1e8449', fontSize: '15px' }}>
                   ✅ Batch registered successfully.
                 </p>
+
+                {/* Three summary cards */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', fontSize: '13px' }}>
                   {[
-                    { label: 'ALGORITHMIC FLOOR PRICE', value: `$${result.floorPrice}` },
-                    { label: 'RISK LEVEL', value: result.riskLevel, color: riskColor[result.riskLevel] },
-                    { label: 'BATCH ID', value: result.baleId, mono: true },
+                    { label: 'ALGORITHMIC FLOOR PRICE', value: `$${result.floorPrice}`, color: '#2c3e50' },
+                    { label: 'RISK LEVEL', value: result.riskLevel, color: result.riskLevel === 'HIGH' ? '#e74c3c' : result.riskLevel === 'MEDIUM' ? '#f39c12' : '#27ae60' },
+                    { label: 'BATCH ID', value: result.baleId, mono: true, color: '#2c3e50' },
                   ].map(({ label, value, color, mono }) => (
                     <div key={label} style={{ backgroundColor: '#fff', padding: '10px', borderRadius: '6px', border: '1px solid #d5f5e3', textAlign: 'center' }}>
-                      <div style={{ color: '#888', fontSize: '11px', marginBottom: '2px' }}>{label}</div>
-                      <div style={{ fontWeight: '700', fontSize: '16px', color: color || '#2c3e50', fontFamily: mono ? 'monospace' : 'inherit' }}>{value}</div>
+                      <div style={{ color: '#888', fontSize: '11px', marginBottom: '4px' }}>{label}</div>
+                      <div style={{ fontWeight: '700', fontSize: '15px', color, fontFamily: mono ? 'monospace' : 'inherit', wordBreak: 'break-all' }}>{value}</div>
                     </div>
                   ))}
                 </div>
-              </>
+
+                {/* Risk explanation */}
+                {result.riskLevel && RISK_EXPLANATION[result.riskLevel] && (() => {
+                  const info = RISK_EXPLANATION[result.riskLevel];
+                  return (
+                    <div style={{ marginTop: '14px', padding: '14px 16px', borderRadius: '8px', backgroundColor: info.bg, border: `1px solid ${info.border}` }}>
+                      <p style={{ margin: '0 0 6px', fontWeight: '700', color: info.color, fontSize: '14px' }}>
+                        {info.icon} {info.title}
+                      </p>
+                      <p style={{ margin: 0, fontSize: '13px', color: '#444', lineHeight: '1.6' }}>
+                        {info.message}
+                      </p>
+                    </div>
+                  );
+                })()}
+              </div>
             ) : (
-              <p style={{ margin: 0, fontWeight: '600', color: '#c0392b' }}>🛑 {result.message}</p>
+              <div style={{ padding: '16px 20px', borderRadius: '8px', backgroundColor: '#fdecea', border: '1px solid #e74c3c' }}>
+                <p style={{ margin: 0, fontWeight: '600', color: '#c0392b' }}>🛑 {result.message}</p>
+              </div>
             )}
           </div>
         )}
