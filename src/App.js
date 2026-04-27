@@ -63,8 +63,62 @@ function App() {
     }, 3000);
   };
 
-  // ─────────────────────────────────────────────
-  // LOGIN SCREEN
+  // ── CSV Export Helper ────────────────────────────────────────────
+  const exportCSV = (filename, rows) => {
+    if (!rows.length) return alert('No data to export.');
+    const headers = Object.keys(rows[0]);
+    const escape  = val => {
+      if (val === null || val === undefined) return '';
+      const str = Array.isArray(val) ? val.join(' | ') : String(val);
+      return str.includes(',') || str.includes('"') || str.includes('\n')
+        ? `"${str.replace(/"/g, '""')}"` : str;
+    };
+    const csv = [
+      headers.join(','),
+      ...rows.map(row => headers.map(h => escape(row[h])).join(','))
+    ].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportBalesCSV = () => {
+    const rows = bales.map(b => ({
+      'Batch ID':          b.id,
+      'Farmer ID':         b.farmerId || b.farmer,
+      'Farmer Name':       b.farmerName || '',
+      'Variety':           b.variety || '',
+      'Number of Bales':   b.numberOfBales || 1,
+      'Total Weight (kg)': b.weight,
+      'Weight per Bale':   b.weightPerBale || '',
+      'Estimated Value':   b.estimatedValue || '',
+      'Wood Weight (kg)':  b.woodWeight || '',
+      'Wood Score':        b.woodScore,
+      'Curing Method':     b.curing || '',
+      'Floor Price ($)':   b.floorPrice,
+      'Destination':       b.destination || '',
+      'GPS Coordinates':   b.gps || 'OFFLINE',
+      'Inputs Declared':   (b.inputs || []).join(' | '),
+      'Photo Evidence':    b.photoEvidence || '',
+      'Risk Level':        b.riskLevel,
+      'Risk Reason':       b.riskReason,
+      'Officer Assigned':  b.officerAssigned,
+      'Status':            b.status,
+      'Registration Date': b.registrationDate ? new Date(b.registrationDate).toLocaleDateString() : '',
+      'Highest Bid ($)':   b.highestBid || '',
+      'Buyer':             b.highestBidder || '',
+      'Gross ($)':         b.receipt ? b.receipt.gross : '',
+      'TIMB Levy ($)':     b.receipt ? b.receipt.timbLevy : '',
+      'Platform Fee ($)':  b.receipt ? b.receipt.platformFee : '',
+      'Net Payout ($)':    b.receipt ? b.receipt.netPayout : '',
+      'Genesis Hash':      b.hash || '',
+    }));
+    exportCSV(`TobaccoTrace_Bales_${new Date().toISOString().slice(0,10)}.csv`, rows);
+  };
   // ─────────────────────────────────────────────
   if (!user) {
     return (
@@ -255,10 +309,16 @@ function App() {
         {/* ── Audit Ledger ── */}
         {view === 'AUDIT' && (
           <div className="ledger-view">
-            <select value={auditFilter} onChange={e => setAuditFilter(e.target.value)} style={{ padding: '8px', marginBottom: '20px' }}>
-              <option value="ALL">View: All Records</option>
-              <option value="NON_COMPLIANT">🚨 Filter: Environmental Violations</option>
-            </select>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+              <select value={auditFilter} onChange={e => setAuditFilter(e.target.value)} style={{ padding: '8px', borderRadius: '6px', border: '1px solid #ccc' }}>
+                <option value="ALL">View: All Records</option>
+                <option value="NON_COMPLIANT">🚨 Filter: Environmental Violations</option>
+              </select>
+              <button onClick={exportBalesCSV}
+                style={{ padding: '8px 18px', backgroundColor: '#27ae60', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>
+                ⬇️ Export to CSV
+              </button>
+            </div>
             <table>
               <thead>
                 <tr>
