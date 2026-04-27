@@ -87,37 +87,7 @@ function App() {
   };
 
   const exportBalesCSV = () => {
-    const rows = bales.map(b => ({
-      'Batch ID':          b.id,
-      'Farmer ID':         b.farmerId || b.farmer,
-      'Farmer Name':       b.farmerName || '',
-      'Variety':           b.variety || '',
-      'Number of Bales':   b.numberOfBales || 1,
-      'Total Weight (kg)': b.weight,
-      'Weight per Bale':   b.weightPerBale || '',
-      'Estimated Value':   b.estimatedValue || '',
-      'Wood Weight (kg)':  b.woodWeight || '',
-      'Wood Score':        b.woodScore,
-      'Curing Method':     b.curing || '',
-      'Floor Price ($)':   b.floorPrice,
-      'Destination':       b.destination || '',
-      'GPS Coordinates':   b.gps || 'OFFLINE',
-      'Inputs Declared':   (b.inputs || []).join(' | '),
-      'Photo Evidence':    b.photoEvidence || '',
-      'Risk Level':        b.riskLevel,
-      'Risk Reason':       b.riskReason,
-      'Officer Assigned':  b.officerAssigned,
-      'Status':            b.status,
-      'Registration Date': b.registrationDate ? new Date(b.registrationDate).toLocaleDateString() : '',
-      'Highest Bid ($)':   b.highestBid || '',
-      'Buyer':             b.highestBidder || '',
-      'Gross ($)':         b.receipt ? b.receipt.gross : '',
-      'TIMB Levy ($)':     b.receipt ? b.receipt.timbLevy : '',
-      'Platform Fee ($)':  b.receipt ? b.receipt.platformFee : '',
-      'Net Payout ($)':    b.receipt ? b.receipt.netPayout : '',
-      'Genesis Hash':      b.hash || '',
-    }));
-    exportCSV(`TobaccoTrace_Bales_${new Date().toISOString().slice(0,10)}.csv`, rows);
+    window.open(`${API_BASE_URL}/api/bales/export`, '_blank');
   };
   // ─────────────────────────────────────────────
   if (!user) {
