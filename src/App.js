@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
 import RegisterBaleForm from './RegisterBaleForm';
+import tobaccoImg from './tobacco.png';
 import {
   Leaf, LayoutDashboard, ClipboardList, ShoppingCart,
   AlertTriangle, BookOpen, LogOut, User, Wallet,
@@ -101,7 +102,11 @@ export default function App() {
     return (
       <div className="login-container">
         <div className="login-card">
-          <div className="brand-logo">
+          <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+            <img src={tobaccoImg} alt="Tobacco Trace"
+              style={{ width: '90px', height: '90px', objectFit: 'contain', borderRadius: '16px' }} />
+          </div>
+          <div className="brand-logo" style={{ justifyContent: 'center' }}>
             <div className="logo-icon"><Leaf size={20} /></div>
             <h1>Tobacco Trace</h1>
           </div>
