@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const VARIETIES = ['Virginia Flue-Cured', 'Burley', 'Oriental', 'Dark Fire-Cured'];
 const CURING_METHODS = ['Solar/Air-Cured', 'Gas-Cured', 'Sustainable Wood', 'Dark Fire-Cured', 'Coal'];
@@ -51,7 +51,7 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
       : null;
 
   const [checkedInputs, setCheckedInputs] = useState([]);
-  const [gpsStatus,     setGpsStatus]     = useState('idle');   // idle | loading | locked
+  const [gpsStatus,     setGpsStatus]     = useState('loading'); // loading | locked | error
   const [photoStatus,   setPhotoStatus]   = useState('idle');   // idle | captured
   const [submitting,    setSubmitting]    = useState(false);
   const [result,        setResult]        = useState(null);
@@ -70,9 +70,12 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
       prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]
     );
 
-  // ── hardware ─────────────────────────────────────────────────────
-  const lockGPS = () => {
-    setGpsStatus('loading');
+  // Auto-lock GPS on form mount
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setGpsStatus('error');
+      return;
+    }
     navigator.geolocation.getCurrentPosition(
       pos => {
         const lat = pos.coords.latitude.toFixed(4);
@@ -80,10 +83,10 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
         set('gps', `${lat}, ${lon}`);
         setGpsStatus('locked');
       },
-      () => { setGpsStatus('idle'); alert('❌ GPS Error: Please allow location access.'); },
+      () => setGpsStatus('error'),
       { enableHighAccuracy: true }
     );
-  };
+  }, []);
 
   const capturePhoto = e => {
     const file = e.target.files[0];
@@ -359,7 +362,15 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
                 onChange={e => {
                   set('offlineMode', e.target.checked);
                   set('gps', ''); set('photoHash', '');
-                  setGpsStatus('idle'); setPhotoStatus('idle');
+                  setGpsStatus(e.target.checked ? 'idle' : 'loading');
+                  if (!e.target.checked) {
+                    // Re-acquire GPS when coming back online
+                    navigator.geolocation.getCurrentPosition(
+                      pos => { set('gps', `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`); setGpsStatus('locked'); },
+                      () => setGpsStatus('error'),
+                      { enableHighAccuracy: true }
+                    );
+                  }
                 }}
                 style={{ width: '16px', height: '16px' }} />
               No smartphone / internet? (Request physical Agritex verification — MEDIUM risk)
@@ -368,18 +379,18 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
             {!form.offlineMode && (
               <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
-                <div>
-                  <button type="button" onClick={lockGPS} disabled={gpsStatus === 'loading'}
-                    style={{ width: '100%', padding: '11px',
-                      backgroundColor: gpsStatus === 'locked' ? '#27ae60' : '#e67e22',
-                      color: 'white', border: 'none', borderRadius: '7px',
-                      cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
-                    {gpsStatus === 'idle'    ? '📍 1. Lock GPS Coordinates'
-                      : gpsStatus === 'loading' ? '⏳ Acquiring GPS Lock...'
-                      : `✅ GPS Locked: ${form.gps}`}
-                  </button>
-                  {errors.gps && <p style={err}>{errors.gps}</p>}
+                {/* GPS — auto-locked, read only */}
+                <div style={{
+                  padding: '11px 14px', borderRadius: '7px', fontSize: '14px', fontWeight: '600',
+                  backgroundColor: gpsStatus === 'locked' ? '#eafaf1' : gpsStatus === 'error' ? '#fdecea' : '#fef9e7',
+                  border: `1px solid ${gpsStatus === 'locked' ? '#27ae60' : gpsStatus === 'error' ? '#e74c3c' : '#f39c12'}`,
+                  color: gpsStatus === 'locked' ? '#1e8449' : gpsStatus === 'error' ? '#c0392b' : '#856404',
+                }}>
+                  {gpsStatus === 'loading' && '⏳ Acquiring GPS lock...'}
+                  {gpsStatus === 'locked'  && `✅ GPS Locked: ${form.gps}`}
+                  {gpsStatus === 'error'   && '❌ GPS unavailable — please allow location access and reload.'}
                 </div>
+                {errors.gps && <p style={err}>{errors.gps}</p>}
 
                 <div>
                   <label style={{
