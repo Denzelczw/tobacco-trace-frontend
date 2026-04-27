@@ -63,32 +63,12 @@ function App() {
     }, 3000);
   };
 
-  // ── CSV Export Helper ────────────────────────────────────────────
-  const exportCSV = (filename, rows) => {
-    if (!rows.length) return alert('No data to export.');
-    const headers = Object.keys(rows[0]);
-    const escape  = val => {
-      if (val === null || val === undefined) return '';
-      const str = Array.isArray(val) ? val.join(' | ') : String(val);
-      return str.includes(',') || str.includes('"') || str.includes('\n')
-        ? `"${str.replace(/"/g, '""')}"` : str;
-    };
-    const csv = [
-      headers.join(','),
-      ...rows.map(row => headers.map(h => escape(row[h])).join(','))
-    ].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
   const exportBalesCSV = () => {
     window.open(`${API_BASE_URL}/api/bales/export`, '_blank');
   };
+
+  // ─────────────────────────────────────────────
+  // LOGIN SCREEN
   // ─────────────────────────────────────────────
   if (!user) {
     return (
