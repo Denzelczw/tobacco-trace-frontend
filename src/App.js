@@ -172,6 +172,7 @@ export default function App() {
               {label}
             </button>
           ))}
+          <div style={{ flex: 1 }} />
           <button className="logout" onClick={() => { setUser(null); setView('DASHBOARD'); }}>
             <LogOut size={16} />
             Sign Out
