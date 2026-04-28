@@ -324,7 +324,7 @@ export default function App() {
                         <td><span className={statusBadge(b.status)}>{b.status}</span></td>
                         {user.role === 'FARMER' && (
                           <td>
-                            {b.status === 'ON_AUCTION' && b.farmer === user.id && (
+                            {b.status === 'ON_AUCTION' && (b.farmerId === user.id || b.farmer === user.id) && (
                               <button className="btn btn-success" style={{ fontSize: '12px', padding: '6px 12px' }} onClick={() => handleAcceptBid(b.id)}>
                                 <ChevronRight size={13} /> Accept ${b.highestBid}
                               </button>
