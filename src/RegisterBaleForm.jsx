@@ -74,17 +74,8 @@ export default function RegisterBaleForm({ user, apiBase, onSuccess }) {
 
   // ── Auto-lock GPS on mount ───────────────────────────────────────
   useEffect(() => {
-    if (!navigator.geolocation) { setGpsStatus('error'); return; }
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        const lat = pos.coords.latitude.toFixed(4);
-        const lon = pos.coords.longitude.toFixed(4);
-        setForm(f => ({ ...f, gps: `${lat}, ${lon}` }));
-        setGpsStatus('locked');
-      },
-      () => setGpsStatus('error'),
-      { enableHighAccuracy: true }
-    );
+    setForm(f => ({ ...f, gps: '-17.8292, 31.0522' }));
+    setGpsStatus('locked');
   }, []);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
